@@ -1,50 +1,17 @@
-
-name: Build Amar Notes APK
-
-on:
-  workflow_dispatch:
-  push:
-    branches: [ main ]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    env:
-      ANDROID_HOME: /usr/local/lib/android/sdk
-      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Setup Android SDK
+- name: Setup Android SDK
+        shell: bash
         run: |
-          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          yes | sdkmanager --licenses
-          sdkmanager --install "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)
 
-      - name: Extract project
-        run: |
-          unzip -q AmarNotes-Android-Project.zip -d .
+          if [ -z "$SDKMANAGER" ]; then
+            echo "SDK Manager not found"
+            exit 1
+          fi
 
-      - name: Build APK
-        run: |
-          cd AmarNotesAndroid
-          gradle --no-daemon assembleDebug
+          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Amar-Notes-APK
-          path: AmarNotesAndroid/app/build/outputs/apk/debug/app-debug.apk
-          
+          "$SDKMANAGER" --install \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
+            
