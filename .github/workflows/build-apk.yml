@@ -30,14 +30,13 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
         with:
           accept-android-sdk-licenses: true
-          packages: |
-            platform-tools
-            platforms;android-35
-            build-tools;35.0.0
+          packages: ''
+
 
 
       - name: Install Dependencies
