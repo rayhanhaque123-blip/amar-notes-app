@@ -1,4 +1,5 @@
-- name: Setup Android SDK
+
+      - name: Setup Android SDK
         shell: bash
         run: |
           SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)
