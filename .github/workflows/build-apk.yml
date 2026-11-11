@@ -23,35 +23,37 @@ jobs:
         with:
           node-version: 20
 
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
+        uses: android-actions/setup-android@v3
         with:
           accept-android-sdk-licenses: true
-          packages: ''
 
-
+      - name: Extract Project
+        run: |
+          test -f smart-notes-pro-phase1.tar.gz
+          tar -xzf smart-notes-pro-phase1.tar.gz
+          test -f smart-notes-pro/package.json
 
       - name: Install Dependencies
+        working-directory: smart-notes-pro
         run: npm install
 
       - name: Add Android Platform
-        run: |
-          if [ ! -d android ]; then
-            npx cap add android
-          fi
+        working-directory: smart-notes-pro
+        run: npx cap add android
 
       - name: Sync Capacitor
+        working-directory: smart-notes-pro
         run: npx cap sync android
 
       - name: Build APK
+        working-directory: smart-notes-pro
         run: |
           chmod +x android/gradlew
           cd android
@@ -59,12 +61,11 @@ jobs:
 
       - name: Verify APK
         run: |
-          test -f android/app/build/outputs/apk/debug/app-debug.apk
-          ls -lh android/app/build/outputs/apk/debug/app-debug.apk
+          test -f smart-notes-pro/android/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Smart-Notes-Pro-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: smart-notes-pro/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
