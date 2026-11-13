@@ -1,44 +1,558 @@
-<!doctype html>
+```html
+<!DOCTYPE html>
 <html lang="bn">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#3157d5"><meta name="description" content="Smart Notes Pro — offline personal notes">
-<link rel="manifest" href="./manifest.webmanifest"><link rel="stylesheet" href="./app.css">
-<title>Smart Notes Pro</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Online Notepad</title>
+
+<style>
+:root {
+    --bg: #f5f6fa;
+    --panel: #ffffff;
+    --text: #222;
+    --border: #e2e5ec;
+    --primary: #4263eb;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, "Noto Sans Bengali", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
+
+body.dark {
+    --bg: #171923;
+    --panel: #252938;
+    --text: #f5f5f5;
+    --border: #3c4254;
+}
+
+header {
+    height: 60px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+}
+
+.logo {
+    font-size: 21px;
+    font-weight: bold;
+    color: var(--primary);
+}
+
+.header-actions {
+    display: flex;
+    gap: 8px;
+}
+
+button, select {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    padding: 8px 11px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: var(--bg);
+}
+
+.main {
+    display: flex;
+    height: calc(100vh - 60px);
+}
+
+.sidebar {
+    width: 230px;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 15px;
+}
+
+.sidebar h3 {
+    font-size: 14px;
+    color: #888;
+}
+
+.note-list {
+    margin-top: 15px;
+}
+
+.note-item {
+    padding: 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-bottom: 5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.note-item.active,
+.note-item:hover {
+    background: #e9edff;
+    color: #3455d1;
+}
+
+.workspace {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 18px;
+}
+
+.note-title {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 22px;
+    font-weight: bold;
+    padding: 10px 5px;
+}
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+}
+
+.toolbar button {
+    min-width: 34px;
+    font-weight: bold;
+}
+
+.toolbar select {
+    max-width: 130px;
+}
+
+.editor-container {
+    flex: 1;
+    overflow: auto;
+    margin-top: 15px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 30px;
+}
+
+#editor {
+    min-height: 100%;
+    outline: none;
+    font-size: 16px;
+    line-height: 1.8;
+    overflow-wrap: anywhere;
+}
+
+#editor:empty:before {
+    content: "এখানে লেখা শুরু করুন...";
+    color: #999;
+    pointer-events: none;
+}
+
+.statusbar {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 5px 0;
+    color: #888;
+    font-size: 12px;
+}
+
+.primary {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+@media(max-width:700px) {
+    .sidebar {
+        display: none;
+    }
+
+    .workspace {
+        padding: 8px;
+    }
+
+    .editor-container {
+        padding: 15px;
+    }
+
+    header {
+        padding: 0 10px;
+    }
+
+    .logo {
+        font-size: 17px;
+    }
+}
+
+@media print {
+    header, .sidebar, .toolbar, .note-title,
+    .statusbar {
+        display: none !important;
+    }
+
+    .main, .workspace, .editor-container {
+        display: block;
+        height: auto;
+        padding: 0;
+        border: none;
+        overflow: visible;
+    }
+
+    #editor {
+        color: black;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">📝 Online Notepad</div>
+
+    <div class="header-actions">
+        <button onclick="newNote()">＋ New</button>
+        <button onclick="saveNote()">Save</button>
+        <button onclick="downloadTXT()">TXT</button>
+        <button onclick="downloadHTML()">HTML</button>
+        <button onclick="window.print()">Print</button>
+        <button onclick="toggleDark()">🌙</button>
+    </div>
+</header>
+
+<div class="main">
+
+    <aside class="sidebar">
+        <button class="primary" style="width:100%"
+            onclick="newNote()">＋ Create New Note</button>
+
+        <h3>MY NOTES</h3>
+        <div class="note-list" id="noteList"></div>
+    </aside>
+
+    <main class="workspace">
+
+        <input class="note-title"
+            id="noteTitle"
+            placeholder="Untitled Note"
+            oninput="autoSave()">
+
+        <div class="toolbar">
+
+            <button onclick="cmd('bold')" title="Bold"><b>B</b></button>
+            <button onclick="cmd('italic')" title="Italic"><i>I</i></button>
+            <button onclick="cmd('underline')" title="Underline"><u>U</u></button>
+            <button onclick="cmd('strikeThrough')" title="Strike"><s>S</s></button>
+
+            <select onchange="cmd('fontName',this.value)">
+                <option value="Arial">Arial</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Verdana">Verdana</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Noto Sans Bengali">Noto Sans Bengali</option>
+            </select>
+
+            <select onchange="cmd('fontSize',this.value)">
+                <option value="3">16px</option>
+                <option value="1">10px</option>
+                <option value="2">13px</option>
+                <option value="4">18px</option>
+                <option value="5">24px</option>
+                <option value="6">32px</option>
+                <option value="7">48px</option>
+            </select>
+
+            <button onclick="cmd('justifyLeft')">☰</button>
+            <button onclick="cmd('justifyCenter')">≡</button>
+            <button onclick="cmd('justifyRight')">☷</button>
+            <button onclick="cmd('justifyFull')">▤</button>
+
+            <button onclick="cmd('insertUnorderedList')">• List</button>
+            <button onclick="cmd('insertOrderedList')">1. List</button>
+
+            <button onclick="cmd('indent')">→</button>
+            <button onclick="cmd('outdent')">←</button>
+
+            <button onclick="cmd('undo')">↶</button>
+            <button onclick="cmd('redo')">↷</button>
+
+            <button onclick="chooseColor()">🎨</button>
+            <button onclick="insertLink()">🔗</button>
+            <button onclick="insertTable()">▦ Table</button>
+            <button onclick="insertImage()">🖼</button>
+            <button onclick="clearFormat()">Clear</button>
+            <button onclick="toggleFullScreen()">⛶</button>
+
+            <input type="color" id="colorPicker"
+                style="width:35px;height:32px;padding:2px"
+                onchange="cmd('foreColor',this.value)">
+        </div>
+
+        <div class="editor-container">
+            <div id="editor" contenteditable="true"
+                spellcheck="true"></div>
+        </div>
+
+        <div class="statusbar">
+            <span id="wordCount">Words: 0</span>
+            <span id="charCount">Characters: 0</span>
+            <span id="saveStatus">Ready</span>
+        </div>
+
+    </main>
+</div>
+
+<script>
+
+let notes = JSON.parse(localStorage.getItem("myNotes") || "[]");
+let currentNote = null;
+let saveTimer;
+
+const editor = document.getElementById("editor");
+const title = document.getElementById("noteTitle");
+
+function createId() {
+    return Date.now().toString();
+}
+
+function newNote() {
+    saveNote();
+
+    const note = {
+        id: createId(),
+        title: "Untitled Note",
+        content: ""
+    };
+
+    notes.unshift(note);
+    currentNote = note.id;
+
+    renderNotes();
+    openNote(note.id);
+    saveAll();
+}
+
+function saveAll() {
+    localStorage.setItem("myNotes", JSON.stringify(notes));
+}
+
+function saveNote() {
+    if (!currentNote) return;
+
+    const note = notes.find(n => n.id === currentNote);
+
+    if (!note) return;
+
+    note.title = title.value || "Untitled Note";
+    note.content = editor.innerHTML;
+    note.updated = new Date().toISOString();
+
+    saveAll();
+    renderNotes();
+
+    document.getElementById("saveStatus").textContent =
+        "✓ Saved";
+}
+
+function autoSave() {
+    document.getElementById("saveStatus").textContent =
+        "Saving...";
+
+    clearTimeout(saveTimer);
+
+    saveTimer = setTimeout(saveNote, 500);
+}
+
+function openNote(id) {
+    saveNote();
+
+    currentNote = id;
+
+    const note = notes.find(n => n.id === id);
+
+    if (!note) return;
+
+    title.value = note.title;
+    editor.innerHTML = note.content;
+
+    renderNotes();
+    updateCount();
+}
+
+function renderNotes() {
+    const list = document.getElementById("noteList");
+
+    list.innerHTML = "";
+
+    notes.forEach(note => {
+        const item = document.createElement("div");
+
+        item.className = "note-item" +
+            (note.id === currentNote ? " active" : "");
+
+        item.textContent = "📄 " + note.title;
+
+        item.onclick = () => openNote(note.id);
+
+        list.appendChild(item);
+    });
+}
+
+function cmd(command, value = null) {
+    editor.focus();
+    document.execCommand(command, false, value);
+    autoSave();
+}
+
+function chooseColor() {
+    document.getElementById("colorPicker").click();
+}
+
+function clearFormat() {
+    cmd("removeFormat");
+}
+
+function insertLink() {
+    const url = prompt("Enter URL:");
+
+    if (url) {
+        cmd("createLink", url);
+    }
+}
+
+function insertTable() {
+    const rows = parseInt(prompt("Number of rows:", "3"));
+    const cols = parseInt(prompt("Number of columns:", "3"));
+
+    if (!rows || !cols || rows < 1 || cols < 1 ||
+        rows > 30 || cols > 20) return;
+
+    let html = '<table border="1" cellpadding="8" ' +
+        'style="border-collapse:collapse;width:100%">';
+
+    for (let r = 0; r < rows; r++) {
+        html += "<tr>";
+
+        for (let c = 0; c < cols; c++) {
+            html += "<td>&nbsp;</td>";
+        }
+
+        html += "</tr>";
+    }
+
+    html += "</table><p></p>";
+
+    editor.focus();
+    document.execCommand("insertHTML", false, html);
+    autoSave();
+}
+
+function insertImage() {
+    const input = document.createElement("input");
+
+    input.type = "file";
+    input.accept = "image/*";
+
+    input.onchange = () => {
+        const file = input.files[0];
+
+        if (!file) return;
+
+        const reader = new FileReader();
+
+        reader.onload = () => {
+            editor.focus();
+
+            document.execCommand(
+                "insertImage",
+                false,
+                reader.result
+            );
+
+            autoSave();
+        };
+
+        reader.readAsDataURL(file);
+    };
+
+    input.click();
+}
+
+function downloadFile(filename, content, type) {
+    const blob = new Blob([content], {type: type});
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+
+    a.click();
+
+    URL.revokeObjectURL(url);
+}
+
+function downloadTXT() {
+    saveNote();
+
+    downloadFile(
+        (title.value || "note") + ".txt",
+        editor.innerText,
+        "text/plain;charset=utf-8"
+    );
+}
+
+function downloadHTML() {
+    saveNote();
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>${escapeHTML(title.value)}</title>
 </head>
 <body>
-<div class="layout">
- <aside class="sidebar" id="sidebar">
-  <div class="brand"><span class="brand-icon">✦</span><span>Smart Notes <b>Pro</b></span></div>
-  <button class="new-note" id="newNote">＋ নতুন নোট</button>
-  <div class="nav-label">লাইব্রেরি</div>
-  <nav id="nav"></nav>
-  <div class="nav-label folder-label">ফোল্ডার <button id="addFolder" title="নতুন ফোল্ডার">＋</button></div>
-  <div id="folders"></div>
-  <div class="side-bottom"><span class="local-dot"></span> শুধু এই ডিভাইসে সংরক্ষিত <button id="backupBtn">ব্যাকআপ / Restore</button></div>
- </aside>
- <div class="scrim" id="scrim"></div>
- <main class="main">
-  <header class="topbar">
-   <button class="icon-btn menu-btn" id="menuBtn" aria-label="মেনু">☰</button>
-   <div class="search-wrap"><span>⌕</span><input id="search" placeholder="নোট খুঁজুন…" type="search"></div>
-   <select id="sort" aria-label="সাজান"><option value="updated">সর্বশেষ</option><option value="created">তৈরির তারিখ</option><option value="title">নাম অনুযায়ী</option></select>
-   <button class="icon-btn" id="themeBtn" title="থিম বদলান">◐</button>
-  </header>
-  <section class="content">
-   <div class="heading-row"><div><div class="eyebrow">YOUR WORKSPACE</div><h1 id="viewTitle">সব নোট</h1><p id="viewSub">আপনার সব লেখা এক জায়গায় রাখুন।</p></div><button class="new-note desktop-new" id="newNote2">＋ নতুন নোট</button></div>
-   <div class="list-tools"><span id="noteCount">০টি নোট</span><div id="filterChips"></div></div>
-   <section id="noteList" class="note-grid"></section>
-  </section>
- </main>
-</div>
-<div class="modal" id="modal"><section class="editor-modal" id="editorModal"></section></div>
-<div class="modal" id="backupModal"><section class="small-modal" id="backupContent"></section></div>
-<div class="toast" id="toast" role="status"></div>
-<script src="./db.js"></script><script src="./app.js"></script>
-<script>
-if ('serviceWorker' in navigator && location.protocol !== 'file:') {
- window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+${editor.innerHTML}
+</body>
+</html>`;
+
+    downloadFile(
+        (title.value || "note") + ".html",
+        html,
+        "text/html;charset=utf-8"
+    );
 }
-</script>
-</body></html>
+
+function escapeHTML(text) {
+    return text.replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[char]);
+}
+
+function updateCount() {
+    const text = editor.innerText.trim();
+
+    const words
